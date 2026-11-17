@@ -125,3 +125,24 @@ $r.Headers['X-Numes-Free-Model']
 - **Not persistent.** `lastGood` and counters reset when the process restarts.
 - **Does not make free pools reliable.** If Numes has no free capacity at all, every attempt fails and you get the honest `503`.
 - **Untested against paid routes on purpose** — plugging a paid model into the chain would remove the $0 guarantee this tool exists to preserve.
+
+## Autostart on Windows
+
+To have the proxy start at logon, put a `.vbs` launcher in your Startup folder:
+
+```powershell
+$startup = [Environment]::GetFolderPath('Startup')
+$script  = (Resolve-Path 'tools\numes-free-failover.mjs').Path
+@"
+Set sh = CreateObject("WScript.Shell")
+sh.Run "node ""$script""", 0, False
+"@ | Set-Content (Join-Path $startup 'numes-free-failover.vbs') -Encoding ascii
+```
+
+Remove that `.vbs` file to stop autostarting. The window stays hidden; check it worked with:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/health
+```
+
+On macOS/Linux, use a `launchd` plist or a `systemd --user` unit instead, pointing `ExecStart` at `node <path>/tools/numes-free-failover.mjs`.
