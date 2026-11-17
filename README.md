@@ -1,114 +1,108 @@
 # Numes models in DeepSeek Harness
 
-A compact, source-backed setup guide for using [Numes](https://numes.ai) with [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) — including the $0 offers in its marketplace.
-
-**No new DSH plugin is needed.** DSH already includes the `llm-pi-ai` adapter for OpenAI-compatible endpoints. You can add Numes from **Settings → Models → Add model provider** without editing files.
-
-[Quick setup](#2-minute-setup) · [Free-tier reality](#the-free-offer-is-not-a-guarantee) · [File-based setup](#optional-file-based-configuration) · [Troubleshooting](#troubleshooting)
+A compact, source-backed guide to using [Numes](https://numes.ai) with [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) — including a **hard $0 route** that cannot fall back to a paid endpoint.
 
 [Русская версия](README.ru.md). Independent guide; unofficial for both projects.
 
+**No new DSH plugin is needed.** DSH already ships the `llm-pi-ai` adapter for OpenAI-compatible endpoints, so Numes is added from **Settings → Models → Add model provider**.
+
+[Quick setup](#2-minute-setup) · [The $0 route](#the-0-route-use-free) · [File-based setup](#optional-file-based-configuration) · [Troubleshooting](#troubleshooting)
+
 ## Why this guide exists
 
-Numes speaks **OpenAI Chat Completions**. DSH speaks to custom Chat Completions gateways through `llm-pi-ai`. The two already fit together; joining them is configuration, not a DSH plugin-development project.
+Numes speaks **OpenAI Chat Completions**; DSH reaches custom Chat Completions gateways through `llm-pi-ai`. Joining them is configuration, not plugin development.
 
-The default DSH model directory does not have a Numes preset. Select **Custom model API**, rather than looking for a Numes button.
+There is no Numes preset in DSH's provider directory, so pick **Custom model API** rather than hunting for a Numes button.
 
 ## 2-minute setup
 
-You need an active DSH installation and a Numes **inference** key. Create or copy one on Numes at [Keys](https://numes.ai/dashboard/keys). The key's billing currency is permanent; see Numes's [key documentation](https://numes.ai/docs/account/api-keys).
+Prerequisites: a working DSH install and a Numes **inference** key from [Keys](https://numes.ai/dashboard/keys). The key's billing currency is permanent.
 
 1. In DSH open **Settings → Models**.
 2. Choose **Add model provider → Custom model API**.
 3. Fill in:
+
    | Field | Value |
    | --- | --- |
    | Provider ID | `numes` |
    | Protocol | **OpenAI Chat Completions** |
    | Endpoint | `https://api.numes.ai/api/v1` |
-   | API key | `sk-numes-v1-…` (your own key) |
-4. Save. The key goes into DSH's credential store, not the provider configuration. If using environment authentication instead, supply `NUMES_API_KEY` to the process launching DSH.
-5. Click **Fetch available models**, choose the models you want, then **Update list**. Discovery inspects `GET https://api.numes.ai/api/v1/models`; it does not fetch inference or prove that a selected offer is free.
-6. In the chat composer, select a model under **Numes**, e.g. `moonshotai/kimi-k3.1-pro`.
+   | API key | your own key (`sk-` followed by the rest, exactly as Numes issued it) |
 
-> A model ID with slashes is expected: DSH uses `numes/moonshotai/kimi-k3.1-pro` to choose the Numes route but sends `moonshotai/kimi-k3.1-pro` to the Numes API. This arrangement was checked on DSH 0.2.2-rc.3.
+4. Save. The key lands in DSH's credential store, not in provider configuration. To use environment authentication instead, give `NUMES_API_KEY` to the process that launches DSH.
+5. Click **Fetch available models**, select the models you want, then **Update list**. Discovery reads `GET https://api.numes.ai/api/v1/models`; it does not test inference or prove that an offer is $0.
+6. In the composer, pick a model under **Numes** — for example `moonshotai/kimi-k3.1-pro:free`.
 
-You are done. No install script, no new daemon, no plugin package, no API key in Git.
+> A model ID containing `/` and `:` is expected. DSH shows it as `numes/moonshotai/kimi-k3.1-pro:free` to select the route, and the Numes API receives `moonshotai/kimi-k3.1-pro:free` unchanged. Checked on DSH Desktop 0.2.2-rc.3.
 
-## The free offer is not a guarantee
+No install script, no daemon, no extra package, and no key in Git.
 
-**$0 != unlimited.** Some Numes endpoints list input and output rates at $0. Whether they remain available, what quotas apply, and how prompt data is retained are separate questions. Read Numes's [model/pricing documentation](https://numes.ai/docs/models) and [provider data policies](https://numes.ai/docs/privacy/provider-data-policies).
+## The $0 route: use `:free`
 
-On 17 November 2026 a manual scan of all 154 models available to one USD key found nine $0 input-completion, tool-capable offers. All were on `amazee.ai / token-factory`. This is **a dated observation, not a promise**. Numes permits many providers, so a model with a free endpoint may also have paid endpoints.
+Numes splits a model's **free** and **paid** endpoints into two catalogue entries:
 
-| State | What to expect |
-| --- | --- |
-| A healthy free endpoint | Actual `usage.cost` should show `0`. Always check your own usage. |
-| No eligible free endpoint | The offer can disappear; refresh the model list. |
-| Default route tries a paid endpoint | With an empty balance this returns `402`; with credits it may charge you. |
-| An interactive agent | Be prepared for variable first-token latency and occasional errors. |
+- `author/model` — only endpoints that charge.
+- `author/model:free` — only endpoints where **every rate is zero** in your key's currency.
 
-This guide deliberately does **not** promise free forever, unlimited requests, zero retention, absence of any per-request/non-token fee, official Numes support for DSH, or that every listed offer is actively serving requests. For cost-sensitive work, set a spending limit on your Numes key and Numes account.
+Per [Numes's model documentation](https://numes.ai/docs/models#free-models), `:free` is a hard guarantee: fallback never crosses to the paid side. If no free endpoint can take the request you get `503 provider_unavailable` and **nothing is charged**. A free request cannot silently become a paid one.
 
-### Safe and useful expectations
+So the free setup is simply the same model ID with `:free` appended. DSH treats it as an ordinary model ID.
 
-- For curiosity, testing integrations, and non-urgent tasks, a free offer can be convenient.
-- For reliable client work, decide your budget and select a paid route with acceptable speed and data policy.
-- For manual API calls, inspect exactly where you are routed (`X-OpenRouter-Metadata: enabled`, or Numes's `GET /generation`).
-- For manual free-only calls, use `provider.only` with a specific endpoint tag **and** `provider.max_price: { prompt: 0, completion: 0 }`. For example:
+**Gotcha that bites people:** a plain ID like `moonshotai/kimi-k3.1-pro` now routes to *paid* endpoints only. With an empty balance that surfaces as `402 insufficient_credits`, and with credit it charges you. If you want $0, the `:free` suffix is not optional.
 
-```json
-{
-  "model": "moonshotai/kimi-k3.1-pro",
-  "messages": [{ "role": "user", "content": "Hello" }],
-  "provider": {
-    "only": ["PROVIDER-SLUG/ENDPOINT-ID"],
-    "max_price": { "prompt": 0, "completion": 0 }
-  }
-}
-```
+Free requests are not unconditional: Numes requires a verified email and applies separate rate limits, returning `429 rate_limited` (check `Retry-After`) or `403 verified_email_required`.
 
-Find the current endpoint tag with Numes's `GET /api/v1/models/{author}/{slug}/endpoints`; do not blindly copy a tag from a dated guide. The DSH adapter does not expose a per-request Numes `provider` pin, so do not imply otherwise.
+### What $0 does not mean
+
+Zero token price is not unlimited, instant, private, or permanent:
+
+- Free entries appear and disappear as provider prices change. A model can be free today and paid tomorrow; the plain entry then starts charging.
+- Zero rate says nothing about retention. Read [Numes's provider data policies](https://numes.ai/docs/privacy/provider-data-policies) before sending private code or credentials.
+- Latency is provider-dependent. In manual probes on 17 November 2026, these free endpoints sometimes needed **50–85 seconds** before the first token, and tool calls could take longer. One short prompt returned in about 3 seconds shortly afterwards — expect variance, not a number.
+- A dated observation: on 17 November 2026 a USD key saw nine `:free` text models with tool support, all served by `amazee.ai / token-factory`. That is a snapshot, not a promise that those nine exist tomorrow.
+
+Always confirm with your own `usage.cost`, Numes [Activity](https://numes.ai/docs/account/activity), and `GET /api/v1/key`.
 
 ## Optional file-based configuration
 
-Many users should use the GUI above. For managed/Desktop profiles, the [official adapter example](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-pi-ai/README.md#configure-provider-routes) can be placed in the profile's `cordis.patch.yml`. A ready Numes starter is provided in [`configs/numes.patch.yml`](configs/numes.patch.yml).
+Most users should use the GUI. For a managed/Desktop profile, [`configs/numes.patch.yml`](configs/numes.patch.yml) is a starter block for the profile's `cordis.patch.yml`, following the [official adapter example](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-pi-ai/README.md#configure-provider-routes).
 
-Adapt it to your profile and review every model entry before use. It contains no secret: `apiKeyEnv: NUMES_API_KEY` makes DSH resolve the credential on each request.
+Add only the `llm-pi-ai` entry — do not replace the whole file. It contains no secret: `apiKeyEnv: NUMES_API_KEY` is a reference DSH resolves per request.
+
+Why the config lists only `:free` IDs: the model list decides which IDs DSH can send, and `:free` decides where Numes may route them. Both are needed for a guaranteed-zero path.
 
 ## Numes also has a launcher
 
-Numes documents `numes run opencode` and `numes run pi`: you can paste or create an inference key once and the launcher generates the corresponding client configuration. That is useful for OpenCode, Pi and OMP, but it does not configure a DSH profile. Use DSH's Models page instead of downloading another agent just for this.
-
-Reference: [Numes coding-agent integration](https://numes.ai/docs/integrations/coding-agents).
+Numes documents `numes run opencode` / `numes run pi`: you paste or create an inference key once and the launcher writes that client's configuration. Handy for OpenCode, Pi and OMP — but it does not configure a DSH profile. Use DSH's Models page instead of installing another agent just for this. See [Numes coding agents](https://numes.ai/docs/integrations/coding-agents).
 
 ## Troubleshooting
 
 | Symptom | Meaning and next step |
 | --- | --- |
-| Models do not show up | Verify `NUMES_API_KEY` or the saved key, refresh the page, and re-use model discovery. If a raw profile edit was misformatted, DSH configuration diagnostics are shown in the application. |
-| `401 invalid_credentials` | Wrong/revoked/expired key, or a management key rather than an inference key. Recreate it on [Numes Keys](https://numes.ai/dashboard/keys); do not publish it in an issue. |
-| `402 insufficient_credits` | The chosen offer is not $0, or the account/key spending limit stopped a request. Check the price of the model and spending limits. Do not retry in a loop. |
-| `503 provider_unavailable` | An endpoint has no capacity, is unhealthy, does not support required parameters, or your `provider` filters excluded all endpoints. |
-| Slow start | Test on a quiet sample first. In my dated manual probes, these $0 endpoints sometimes needed about 50–85 seconds before first output, and tool calls could take longer. Not every network stall or 50-second delay is necessarily bad. |
-| Empty response/tool loop | Try a different offer in the DSH picker, shorten the context, and give the model enough output tokens for tool calls or reasoning. A diagnostic/retry policy does not make weak endpoints instant. |
-| The selected model versus what you receive | Numes chooses the route. Check the returned `provider` and Numes generation metadata/logs. |
+| `402 insufficient_credits` on a model you thought was free | You sent a plain ID, so routing used a paid endpoint. Append `:free`, and check the balance/limits with `GET /api/v1/key`. |
+| `429 rate_limited` | Free requests have their own limits. Wait for `Retry-After`; do not loop. |
+| `403 verified_email_required` | Numes requires a verified email for free requests. Verify it on Numes. |
+| `503 provider_unavailable` | No eligible free endpoint right now, an unhealthy endpoint, or unsupported parameters. Refresh the catalogue, try another `:free` model, or wait. |
+| `401 invalid_credentials` | Wrong/revoked/expired key, or a management key instead of an inference key. Recreate on [Numes Keys](https://numes.ai/dashboard/keys); never post the key. |
+| Model missing from the picker | Re-run discovery, and confirm the key and route saved. Raw profile edits show up in DSH configuration diagnostics. |
+| Slow start | Measure on a quiet sample. Free endpoints vary a lot; a 60-second first token is a known behaviour, not necessarily a broken config. |
+| Empty content, truncated answer | Raise the output allowance, shorten context, or try another `:free` model. Reasoning tokens count toward output. |
+| Which endpoint actually served | Check the response `provider` field and Numes generation metadata/logs. |
 
 ## Scope and disclaimers
 
-- Tested using ordinary OpenAI-compatible requests and a tool call from a cwd-style coding-agent payload.
-- The preparation environment was DSH Desktop 0.2.2-rc.3 on Windows; the selected model was visible in DSH's model selector after the local route configuration. This is not certification against every DSH release or Numes account.
-- DSH and Numes both evolve. Re-read their official documentation after upgrading and treat this repository's samples as a point-in-time starting point.
-- Numes's [Acceptable Use Policy](https://numes.ai/legal/acceptable-use) applies. This guide does not automate account creation, captcha solving, credit harvesting, key sharing, or evasion of account/rate limits.
-- Not affiliated with DeepSeek or Numes. The services and $0 offers belong to their respective operators. No warranty on endpoint availability, token charges, speed, privacy or suitability.
+- Verified with ordinary OpenAI-compatible requests, streaming usage, and tool calls from a coding-agent-shaped payload.
+- Tested on DSH Desktop 0.2.2-rc.3 (Windows) with a USD key. Not certified for every DSH release, account, or Numes deployment.
+- DSH and Numes both change. Re-read their docs after upgrading; treat samples here as a dated starting point.
+- Numes's [Acceptable Use Policy](https://numes.ai/legal/acceptable-use) applies. This guide does not automate account creation, captcha solving, credit harvesting, key sharing, or quota evasion.
+- Not affiliated with DeepSeek or Numes. No warranty on availability, charges, speed, privacy, or fitness.
 
 ### Sources
 
-- [Official DSH `llm-pi-ai` adapter README](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-pi-ai/README.md)
-- [Official DSH Models UI README](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-models/README.md)
-- [Numes: Models](https://numes.ai/docs/models) · [Custom API quickstart](https://numes.ai/docs/quickstart) · [Agent integration](https://numes.ai/docs/integrations/coding-agents)
-- [Numes: Provider routing](https://numes.ai/docs/routing/provider-routing)
+- [Numes: Free models](https://numes.ai/docs/models#free-models) — the `:free` contract
+- [Numes: Provider routing](https://numes.ai/docs/routing/provider-routing) · [Quickstart](https://numes.ai/docs/quickstart) · [Coding agents](https://numes.ai/docs/integrations/coding-agents)
+- [DSH `llm-pi-ai` adapter](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-pi-ai/README.md) · [DSH Models UI](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-models/README.md)
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Contributing notes: [CONTRIBUTING.md](CONTRIBUTING.md).
+MIT — see [LICENSE](LICENSE). Contribution and security notes: [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md).
