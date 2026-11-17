@@ -1,4 +1,5 @@
-# Optional sample for a managed DSH Desktop profile's cordis.patch.yml.
+# Setup guide: ../docs/SETUP.ru.md (Russian) and ../docs/SETUP.md (English).
+# Optional sample for a managed DSH profile's cordis.patch.yml.
 # Prefer Settings -> Models -> Add model provider in a normal user install.
 # DO NOT paste this whole file over your settings. Add only the llm-pi-ai block,
 # review with a YAML parser, and preserve your other entries.
@@ -15,10 +16,13 @@
         # The default is 300000 ms. These explicit values matter for slow paths:
         # they do not speed up the upstream or guarantee a healthy response.
         streamIdleTimeoutMs: 300000
-        # These nine offers were explicitly checked for $0 prompt/completion
-        # rates and tool support on 17 November 2026 (UTC). Availability changes.
-        # Fetch the current catalogue and inspect per-endpoint prices before
-        # extending this list. Discovery alone does not prove an offer is $0.
+        # On 17 November 2026 these nine :free entries existed for one USD
+        # key with zero published token rates and catalog-declared text/tool
+        # support. Actual tool calls were separately verified for Kimi and
+        # GLM only. Offers and even these capacities can change: re-fetch
+        # the current :free endpoint details before copying this template.
+        # Model discovery alone proves neither a free route nor these limits.
+        # Do not send true here: DSH accepts false or a level mapping.
         models:
           - id: moonshotai/kimi-k3.1-pro:free
             name: Kimi K3.1 Pro (free)
