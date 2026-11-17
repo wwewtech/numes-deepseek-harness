@@ -92,6 +92,18 @@ All error handling is by status + stable `metadata.error_type`, never by human-r
 
 The [Numes coding-agent guide](https://numes.ai/docs/integrations/coding-agents) describes `numes run opencode` / `numes run pi`. That launcher creates OpenCode/Pi/OMP configuration and can create/save an inference key. It is useful with the mentioned agents; it does **not** create a DSH profile. DSH already reads your built-in `llm-pi-ai` adapter via its own Models page.
 
+## Automatic free-model failover
+
+Tired of switching models by hand after a `503`? A local proxy tries every `:free` model in turn until one answers, and **never falls back to a paid one**:
+
+```bash
+node tools/numes-free-failover.mjs
+```
+
+Then add a second DSH provider pointing at `http://127.0.0.1:8787/v1` (OpenAI Chat Completions, any placeholder key — the real Numes key stays inside the proxy). Details: [tools/README.md](tools/README.md); ready block: [configs/numes-failover.patch.yml](configs/numes-failover.patch.yml).
+
+Verified: with the first candidate unavailable, the request moved to the next model and returned with `cost: 0`.
+
 ## Sources
 
 - [DSH README: run](https://github.com/deepseek-ai/deepseek-harness#run)

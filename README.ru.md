@@ -43,6 +43,18 @@ English: [README.md](README.md) · [Full guide](docs/SETUP.md)
 
 $0 не означает «безлимит, мгновенно, навсегда или приватно». Доступность free-предложений не гарантирована по времени, скорости и квоте. В ручных замерах 17 ноября 2026 года первые токены бесплатных endpoints шли ~50–85 с, позднее короткий запрос Kimi `:free` ответил `PONG` с `cost: 0` примерно за 3 секунды. Наблюдения не обещают вашего результата. Приватные данные отправляйте только после чтения [политик Numes/провайдеров](https://numes.ai/docs/privacy/provider-data-policies).
 
+## Автоматический перебор бесплатных моделей
+
+Если надоело руками менять модель после `503` — есть локальный прокси, который сам перебирает все `:free` модели, пока одна не ответит, и **никогда не уходит на платную**:
+
+```powershell
+node tools\numes-free-failover.mjs
+```
+
+Дальше в DSH добавьте второго провайдера на `http://127.0.0.1:8787/v1` (protocol OpenAI Chat Completions, ключ — любой плейсхолдер, настоящий ключ остаётся в прокси). Подробности: [tools/README.md](tools/README.md), готовый блок: [configs/numes-failover.patch.yml](configs/numes-failover.patch.yml).
+
+Проверено: при недоступной первой модели запрос ушёл на следующую и вернулся с `cost: 0`.
+
 ## Официальные источники
 
 [Numes keys](https://numes.ai/docs/account/api-keys) · [Free models](https://numes.ai/docs/models#free-models) · [DSH models & UI installation](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/providers.md) · [Numes errors](https://numes.ai/docs/api-reference/errors)

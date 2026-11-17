@@ -1,0 +1,40 @@
+# Optional second DSH provider that points at the local free-model
+# failover proxy (tools/numes-free-failover.mjs, default 127.0.0.1:8787).
+#
+# Start the proxy first, then add this entry to your profile's
+# cordis.patch.yml top-level array next to the existing llm-pi-ai entry.
+# If you already have an llm-pi-ai entry, merge the `numes-free` provider
+# UNDER its existing `providers:` mapping instead of adding a second
+# `- id: llm-pi-ai` row; two rows with the same id are a duplicate entry.
+#
+# No Numes key is configured here: the proxy holds it. The placeholder below
+# only satisfies the adapter's credential requirement for a keyed route.
+- id: llm-pi-ai
+  name: "@deepseek-ai/dsh-llm-pi-ai"
+  config:
+    providers:
+      numes-free:
+        displayName: Numes (free, auto-failover)
+        api: openai-completions
+        baseURL: http://127.0.0.1:8787/v1
+        apiKeyEnv: NUMES_PROXY_PLACEHOLDER
+        streamIdleTimeoutMs: 300000
+        models:
+          # The proxy answers any of these IDs and picks the actual Numes
+          # model itself; list one entry per model you want selectable, or a
+          # single entry if you just want "the working free model".
+          - id: moonshotai/kimi-k3.1-pro:free
+            name: Kimi K3.1 Pro (free, auto)
+            contextWindow: 1048576
+            maxTokens: 65536
+            reasoningEfforts: false
+          - id: deepseek/deepseek-v4.1-flash:free
+            name: DeepSeek V4.1 Flash (free, auto)
+            contextWindow: 1048576
+            maxTokens: 65536
+            reasoningEfforts: false
+          - id: z-ai/glm-5.3-flash:free
+            name: GLM 5.3 Flash (free, auto)
+            contextWindow: 1048576
+            maxTokens: 65536
+            reasoningEfforts: false
