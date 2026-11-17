@@ -1,17 +1,21 @@
 # Free-model failover proxy
 
-Local OpenAI-compatible endpoint that tries every **`:free`** Numes model in turn until one answers, so you stop switching models by hand when a pool drops.
+Local OpenAI-compatible endpoint that tries every **`:free`** Numes model in turn until one answers — and if they all fail, waits and tries again with an exponential backoff, forever, instead of giving up.
 
 ```
-DSH (or curl) ──▶ 127.0.0.1:8787  ──▶  Numes :free models, one per attempt
-                    (this script)
+DSH (or curl) ──▶ 127.0.0.1:8787 ──▶ Numes :free models, one per attempt
+                    (this script)      │
+                                        └─ all failed? wait 5s→10s→15s→30s→1m→2m→5m→5m… and retry
 ```
 
 ## Why it exists
 
-`:free` requests never fall back to a paid endpoint — that is the guarantee that keeps them at $0. The cost of that guarantee is that a single unavailable free pool returns `503 provider_unavailable` and the turn fails. This proxy turns that dead end into "try the next free model".
+`:free` requests never fall back to a paid endpoint — that is the guarantee that keeps them at $0. The cost of that guarantee is that a single unavailable free pool returns `503 provider_unavailable` and the turn fails. This proxy turns both dead ends into "keep trying":
 
-**It never uses a paid model.** Every candidate in the chain ends with `:free`, so a failed attempt costs nothing and there is no path to a charge.
+1. **Failover** moves to the next free model when one fails.
+2. **Retry rounds** wait out a fully exhausted free pool: every round walks the whole chain again, spaced `5s → 10s → 15s → 30s → 1m → 2m → 5m`, then every 5 minutes forever. A temporarily exhausted pool recovers without the caller doing anything.
+
+**It never routes to a paid model.** Every candidate must end with `:free`, enforced by a guard on both the configured chain and per-request overrides — a non-free model id is rejected with a `400` before any traffic leaves your machine. And a Numes `:free` request never falls back to a paid endpoint anyway, so there is no path to a charge.
 
 ## Requirements
 
@@ -35,8 +39,8 @@ node tools/numes-free-failover.mjs
 Expected output:
 
 ```text
-2026-11-17T16:15:45.490Z listening on http://127.0.0.1:8787 (chain of 9 free models)
-2026-11-17T16:15:45.494Z upstream https://api.numes.ai/api/v1; key source: ~/.dsh/.credentials.yaml
+2026-11-17T18:27:06.713Z listening on http://127.0.0.1:8787 (chain of 9 free models)
+2026-11-17T18:27:06.716Z retry rounds: backoff 5s → 10s → 15s → 30s → 60s → 120s → 300s → then 300s forever, max rounds ∞
 ```
 
 Leave it running in its own terminal window. Stop with `Ctrl+C`.
@@ -54,56 +58,63 @@ Add a second provider that points at the proxy instead of at Numes. See [`../con
 
 The placeholder is only required because the adapter wants a credential; the real Numes key stays inside the proxy process.
 
-Then keep the original `numes` provider for direct `:free` access if you want it, and pick the `numes-free` models when you want automatic failover.
+Keep the original `numes` provider for direct `:free` access if you want it, and pick the `numes-free` models when you want automatic failover and retries.
 
 ## Endpoints
 
 | Route | Purpose |
 | --- | --- |
-| `POST /v1/chat/completions` | Chat completion with failover (streaming and non-streaming) |
+| `POST /v1/chat/completions` | Chat completion with failover + retry rounds (streaming and non-streaming) |
 | `GET /v1/models` | Lists the failover chain, so discovery in DSH succeeds |
-| `GET /health` | Current `lastGood` model, configured chain, attempt/success/failure counters |
+| `GET /health` | Current `lastGood` model, configured chain, backoff, attempt/success/failure/round counters |
 
 ## Request headers (optional)
 
 | Header | Effect |
 | --- | --- |
-| `X-Numes-Chain` | Comma-separated model IDs to try instead of the default chain |
-| `X-Numes-Force-Model` | Try exactly one model, no failover |
+| `X-Numes-Chain` | Comma-separated model IDs to try instead of the default chain (each must end `:free`) |
+| `X-Numes-Force-Model` | Try exactly one model, no failover (must end `:free`) |
+| `X-Numes-Max-Rounds` | Give up after this many rounds for this request (`0` = never stop) |
 
 ## Response headers
 
 | Header | Meaning |
 | --- | --- |
 | `X-Numes-Free-Model` | Which model actually answered |
-| `X-Numes-Free-Attempts` | How many attempts it took (1 = first model worked) |
+| `X-Numes-Free-Attempts` | Total tries across all rounds (2 = one failover) |
+| `X-Numes-Free-Round` | Which round succeeded (1 = immediate) |
 
 ## Behaviour worth knowing
 
 - **Empty answer with a small output cap.** The free models reason by default and reasoning tokens count toward `max_tokens`. With `max_tokens: 40` a reply came back as `finish_reason: "length"` with empty `content` and 40 reasoning tokens. Use a generous cap (1500+), or send `reasoning: {"effort": "none"}`, which produced `PONG` with 0 reasoning tokens in testing.
 - **Sticky:** the last model that worked is tried first on the next request, so a healthy model is not re-probed every time.
-- **Streaming:** once the first byte arrives, output is piped straight through. Failover cannot happen after partial output — restarting mid-answer would corrupt it, and tool effects may already have run.
-- **Deadlines:** `NUMES_PROXY_HEADER_TIMEOUT_MS` (default 180 s) bounds the wait for the first byte per attempt; `NUMES_PROXY_BODY_TIMEOUT_MS` (default 300 s) bounds a non-streaming attempt; `NUMES_PROXY_IDLE_TIMEOUT_MS` (default 120 s) closes a stalled stream. Free pools legitimately need 50–85 s before first output, so do not set these aggressively.
-- **Failures are free:** a `503`/timeout on an attempt is not billed. Only delivered output is charged, and here it always comes from a `:free` endpoint.
-- **All candidates failing** returns the last upstream error with `error_type: provider_unavailable` and a note that nothing was charged. It does not invent a paid fallback.
+- **Retries never hammer a dead account.** Numes errors that mean "the key or funds are the problem" (`401` invalid credentials, `402` insufficient credits, `403` forbidden) abort the rounds immediately with a clear message — waiting cannot fix a rejected key. Everything else (`503` no provider, `429` rate limit, timeouts) is retried.
+- **Streaming:** once the first byte arrives, output is piped straight through. Failover cannot happen after partial output — restarting mid-answer would corrupt it, and tool effects may already have run. A stalled stream is closed by the idle watchdog.
+- **Backoff honours the platform.** Numes rate limits answer with `429 rate_limited` and a `Retry-After` hint; Numes overload answers `503 service_unavailable` with `Retry-After` (usually 2 seconds). The 5-second first backoff already respects both. A rate-limited request does not consume its `X-Request-Id`, and failed attempts are never charged (no output, no charge), so waiting costs nothing.
+- **Failures are free.** Per the [Principles](https://numes.ai/docs/principles): "a request that fails without delivering output to you isn't charged". Only delivered output is charged, and here it always comes from a `:free` endpoint.
+- **Disconnects stop everything.** If the caller (DSH) disconnects mid-rounds, the proxy aborts attempts and backoff promptly rather than retrying to a dead connection.
 
 ## Configuration
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `NUMES_PROXY_PORT` | `8787` | Listen port on `127.0.0.1` |
-| `NUMES_CHAIN` | the nine `:free` IDs | Comma-separated failover order |
+| `NUMES_CHAIN` | the nine `:free` IDs | Comma-separated failover order (each must end `:free`) |
 | `NUMES_UPSTREAM` | `https://api.numes.ai/api/v1` | Upstream base URL |
 | `NUMES_PROXY_HEADER_TIMEOUT_MS` | `180000` | First-byte deadline per attempt |
 | `NUMES_PROXY_BODY_TIMEOUT_MS` | `300000` | Overall deadline, non-streaming |
 | `NUMES_PROXY_IDLE_TIMEOUT_MS` | `120000` | Stalled-stream watchdog |
+| `NUMES_PROXY_BACKOFF_MS` | `5000,10000,15000,30000,60000,120000,300000` | Round delays; the last value repeats forever |
+| `NUMES_PROXY_MAX_ROUNDS` | `0` | Give up after N rounds (`0` = never) |
 
 The default chain is the nine `:free` entries observed on 17 November 2026. Refresh it when the catalogue changes — a model that loses its free offer will simply fail its attempt and the next one is tried.
+
+The default backoff (5s → 10s → 15s → 30s → 1m → 2m → 5m → 5m forever) matches the observed behaviour of the free pool: short blips recover in seconds, exhausted capacity recovers in minutes. Free endpoints legitimately need 50–85 s before first output, so the per-attempt timeouts (180 s / 300 s) must stay generous.
 
 ## Verify it yourself
 
 ```powershell
-# health and current chain
+# health, chain, backoff and counters
 Invoke-RestMethod http://127.0.0.1:8787/health
 
 # one real request; the headers name the model that answered
@@ -111,6 +122,11 @@ $body = @{ model='auto'; messages=@(@{role='user';content='Reply with one word: 
 $r = Invoke-WebRequest http://127.0.0.1:8787/v1/chat/completions -Method POST -ContentType 'application/json' -Body $body -TimeoutSec 300 -UseBasicParsing
 $r.Headers['X-Numes-Free-Model']
 ($r.Content | ConvertFrom-Json).usage.cost    # 0
+
+# the paid-model guard in action
+$dead = Invoke-WebRequest http://127.0.0.1:8787/v1/chat/completions -Method POST -Headers @{'X-Numes-Force-Model'='moonshotai/kimi-k3.1-pro'} -ContentType 'application/json' -Body $body -TimeoutSec 30 -UseBasicParsing -SkipHttpErrorCheck
+$dead.StatusCode   # 400
+($dead.Content | ConvertFrom-Json).error.message   # refusing non-free model ...
 ```
 
 ## Security
@@ -124,26 +140,5 @@ $r.Headers['X-Numes-Free-Model']
 
 - **Not a scheduler.** It serialises nothing; concurrent requests each run their own chain.
 - **Not persistent.** `lastGood` and counters reset when the process restarts.
-- **Does not make free pools reliable.** If Numes has no free capacity at all, every attempt fails and you get the honest `503`.
-- **Untested against paid routes on purpose** — plugging a paid model into the chain would remove the $0 guarantee this tool exists to preserve.
-
-## Autostart on Windows
-
-To have the proxy start at logon, put a `.vbs` launcher in your Startup folder:
-
-```powershell
-$startup = [Environment]::GetFolderPath('Startup')
-$script  = (Resolve-Path 'tools\numes-free-failover.mjs').Path
-@"
-Set sh = CreateObject("WScript.Shell")
-sh.Run "node ""$script""", 0, False
-"@ | Set-Content (Join-Path $startup 'numes-free-failover.vbs') -Encoding ascii
-```
-
-Remove that `.vbs` file to stop autostarting. The window stays hidden; check it worked with:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8787/health
-```
-
-On macOS/Linux, use a `launchd` plist or a `systemd --user` unit instead, pointing `ExecStart` at `node <path>/tools/numes-free-failover.mjs`.
+- **Does not make free pools reliable.** It converts "fail fast" into "wait and try again", which is what an exhausted pool needs — but if Numes removes every free offer, retry rounds keep failing honestly.
+- **Untested against paid routes on purpose** — the `:free` guard makes a paid route impossible, which is the point.
