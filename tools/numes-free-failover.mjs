@@ -29,6 +29,9 @@
  *   NUMES_PROXY_BACKOFF_MS          comma-separated round delays in ms;
  *                                  default "5000,10000,15000,30000,60000,120000,300000"
  *   NUMES_PROXY_MAX_ROUNDS          give up after N rounds (0 = never), default 0
+ *   NUMES_PROXY_DISCOVERY_MS        refresh the free-model catalogue from
+ *                                  GET /models every N ms; 0 disables. Default 300000.
+ *   NUMES_PROXY_MIN_BACKOFF_MS      floor for Retry-After-aware waits, default 1000
  *
  * Optional request headers:
  *   X-Numes-Force-Model  try this single model only
@@ -51,6 +54,8 @@ const DEFAULT_BACKOFF_MS = [5_000, 10_000, 15_000, 30_000, 60_000, 120_000, 300_
 const BACKOFF_MS = (process.env.NUMES_PROXY_BACKOFF_MS || DEFAULT_BACKOFF_MS.join(','))
   .split(',').map(s => Number(s.trim())).filter(n => n >= 0);
 const MAX_ROUNDS = Number(process.env.NUMES_PROXY_MAX_ROUNDS || 0);
+const DISCOVERY_MS = Number(process.env.NUMES_PROXY_DISCOVERY_MS || 300_000);
+const MIN_BACKOFF_MS = Number(process.env.NUMES_PROXY_MIN_BACKOFF_MS || 1_000);
 
 const DEFAULT_CHAIN = [
   'moonshotai/kimi-k3.1-pro:free',
@@ -66,6 +71,14 @@ const DEFAULT_CHAIN = [
 
 const CHAIN = (process.env.NUMES_CHAIN || DEFAULT_CHAIN.join(','))
   .split(',').map(s => s.trim()).filter(Boolean);
+
+// Live catalogue state, refreshed from GET /models by discoverFreeModels().
+// autoChain holds the free IDs the key can currently see; CHAIN stays the
+// user's explicit preference.  Active chain = autoChain when discovery has
+// data and the user did not pin NUMES_CHAIN.
+let autoChain = null;
+let lastDiscovery = null;
+const pinnedChain = Boolean(process.env.NUMES_CHAIN);
 
 // Free-model guard: strip a `:free` model down to its paid twin?  Never.
 // Any model id that reaches the upstream MUST end with :free.  Guard on
@@ -104,6 +117,44 @@ const stats = {
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+/** The model list routing actually uses right now. */
+function activeChain() {
+  return !pinnedChain && autoChain && autoChain.length ? autoChain : CHAIN;
+}
+
+/**
+ * Catalogue discovery: GET /models returns every model the key can see;
+ * free entries appear as their own `:free` rows.  Refresh autoChain so a
+ * removed free offer disappears from routing and a new one joins it,
+ * without touching a user-pinned NUMES_CHAIN.  Failure keeps the last
+ * good list; discovery never blocks or kills requests.
+ */
+async function discoverFreeModels() {
+  try {
+    const res = await fetch(`${UPSTREAM}/models`, {
+      headers: { Authorization: `Bearer ${KEY}` },
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const list = await res.json();
+    const free = (list.data || [])
+      .map(m => m.id)
+      .filter(id => typeof id === 'string' && id.endsWith(':free'));
+    if (free.length) {
+      const before = autoChain ? autoChain.join(',') : '(none)';
+      autoChain = free;
+      stats.discovered = { free: free.length, at: new Date().toISOString() };
+      if (before !== free.join(',')) {
+        log(`discovery: ${free.length} free models in catalogue${pinnedChain ? ' (NUMES_CHAIN pinned, not applied)' : ''}`);
+        if (!pinnedChain) log(`discovery: chain now ${free.join(', ')}`);
+      }
+    }
+    lastDiscovery = new Date().toISOString();
+  } catch (err) {
+    log(`discovery failed (keeping last list): ${err.message}`);
+  }
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -133,13 +184,22 @@ async function attempt(model, parsedBody, clientSignal, stream) {
         'Content-Type': 'application/json',
         Accept: stream ? 'text/event-stream' : 'application/json',
       },
-      body: JSON.stringify({ ...parsedBody, model }),
+      body: JSON.stringify({
+        ...parsedBody,
+        model,
+        // Second free-guard: cap every rate at zero per request, so even a
+        // catalogue mistake cannot route this call to a paid endpoint.
+        provider: { max_price: { prompt: 0, completion: 0 } },
+      }),
       signal: controller.signal,
     });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       const fatal = res.status === 401 || res.status === 402 || res.status === 403;
-      return { ok: false, status: res.status, body: text.slice(0, 400), fatal };
+      // 429 rate_limited and 503 service_unavailable can carry Retry-After:
+      // the platform's own "wait this long" hint, in seconds.
+      const retryAfter = Number(res.headers.get('retry-after') || 0) * 1000;
+      return { ok: false, status: res.status, body: text.slice(0, 400), fatal, retryAfter };
     }
     return { ok: true, res, ms: Date.now() - started };
   } catch (err) {
@@ -163,7 +223,31 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/v1/health')) {
-      return sendJson(res, 200, { ok: true, lastGood, chain: CHAIN, backoff: BACKOFF_MS, stats });
+      return sendJson(res, 200, { ok: true, lastGood, chain: activeChain(), backoff: BACKOFF_MS, stats });
+    }
+    if (req.method === 'GET' && (req.url === '/status' || req.url === '/v1/status')) {
+      // Human-friendly one-glance status: what we route to, what we avoid,
+      // and how the retry engine has been doing since start.
+      return sendJson(res, 200, {
+        ok: true,
+        proxy: { host: HOST, port: PORT, upstream: UPSTREAM, started: stats.started },
+        free: {
+          pinnedChain,
+          models: activeChain(),
+          discoveredAt: stats.discovered?.at || null,
+          discoveredCount: stats.discovered?.free || null,
+          lastGood,
+          guard: ':free suffix + provider.max_price {prompt:0, completion:0} on every request',
+        },
+        retry: {
+          backoffMs: BACKOFF_MS,
+          maxRounds: MAX_ROUNDS || 'infinite',
+          rounds: stats.rounds,
+          retries: stats.retries,
+          honourRetryAfter: true,
+        },
+        stats,
+      });
     }
     if (req.method === 'GET' && (req.url === '/v1/models' || req.url === '/models')) {
       return sendJson(res, 200, {
@@ -184,11 +268,12 @@ const server = http.createServer(async (req, res) => {
     const force = req.headers['x-numes-force-model'];
     const chainOverride = req.headers['x-numes-chain'];
     const reqMaxRounds = Number(req.headers['x-numes-max-rounds'] || 0);
+    const route = activeChain();
     let chain = chainOverride
       ? String(chainOverride).split(',').map(s => s.trim()).filter(Boolean)
-      : (lastGood && CHAIN.includes(lastGood)
-        ? [lastGood, ...CHAIN.filter(m => m !== lastGood)]
-        : CHAIN);
+      : (lastGood && route.includes(lastGood)
+        ? [lastGood, ...route.filter(m => m !== lastGood)]
+        : route);
     if (force) chain = [String(force)];
     try { chain.forEach(assertFree); }
     catch (e) { return sendJson(res, 400, { error: { message: e.message, code: 400 } }); }
@@ -271,7 +356,15 @@ const server = http.createServer(async (req, res) => {
 
       // Every model failed this round.  Decide whether to have another one.
       if (roundsLimit > 0 && round >= roundsLimit) break;
-      const wait = BACKOFF_MS.length ? BACKOFF_MS[Math.min(round - 1, BACKOFF_MS.length - 1)] : 5000;
+      // Retry-After-aware wait: when the platform said how long to wait
+      // (429 rate_limited, 503 service_unavailable), honour the larger of
+      // its hint and our own backoff; never wait less than the hint.
+      let wait = BACKOFF_MS.length ? BACKOFF_MS[Math.min(round - 1, BACKOFF_MS.length - 1)] : 5000;
+      if (lastError?.retryAfter && lastError.retryAfter > wait) {
+        wait = lastError.retryAfter;
+        log(`round ${round}: honouring upstream Retry-After of ${(wait / 1000).toFixed(0)}s`);
+      }
+      wait = Math.max(wait, MIN_BACKOFF_MS);
       log(`round ${round} exhausted (${totalAttempts} tries); retrying in ${wait / 1000}s`);
       // Sleep in short slices so a disconnecting client aborts promptly.
       const until = Date.now() + wait;
@@ -305,4 +398,12 @@ server.listen(PORT, HOST, () => {
   log(`listening on http://${HOST}:${PORT} (chain of ${CHAIN.length} free models)`);
   log(`upstream ${UPSTREAM}; key source: ${process.env.NUMES_API_KEY ? 'env' : '~/.dsh/.credentials.yaml'}`);
   log(`retry rounds: backoff ${BACKOFF_MS.map(m => m / 1000 + 's').join(' → ') || 'none'}${BACKOFF_MS.length ? ' → then ' + (BACKOFF_MS[BACKOFF_MS.length - 1] / 1000) + 's forever' : ''}, max rounds ${MAX_ROUNDS || '∞'}`);
+  log(`free guard: :free suffix + provider.max_price{0,0} on every request; paid routes impossible`);
+  if (DISCOVERY_MS > 0) {
+    log(`catalogue discovery: every ${DISCOVERY_MS / 1000}s from GET /models${pinnedChain ? ' (NUMES_CHAIN pinned: discovery is informational)' : ''}`);
+    void discoverFreeModels();
+    setInterval(() => { void discoverFreeModels(); }, DISCOVERY_MS).unref();
+  } else {
+    log('catalogue discovery: disabled (NUMES_PROXY_DISCOVERY_MS=0)');
+  }
 });
