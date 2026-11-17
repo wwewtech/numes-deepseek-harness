@@ -80,6 +80,7 @@ Then keep the original `numes` provider for direct `:free` access if you want it
 
 ## Behaviour worth knowing
 
+- **Empty answer with a small output cap.** The free models reason by default and reasoning tokens count toward `max_tokens`. With `max_tokens: 40` a reply came back as `finish_reason: "length"` with empty `content` and 40 reasoning tokens. Use a generous cap (1500+), or send `reasoning: {"effort": "none"}`, which produced `PONG` with 0 reasoning tokens in testing.
 - **Sticky:** the last model that worked is tried first on the next request, so a healthy model is not re-probed every time.
 - **Streaming:** once the first byte arrives, output is piped straight through. Failover cannot happen after partial output — restarting mid-answer would corrupt it, and tool effects may already have run.
 - **Deadlines:** `NUMES_PROXY_HEADER_TIMEOUT_MS` (default 180 s) bounds the wait for the first byte per attempt; `NUMES_PROXY_BODY_TIMEOUT_MS` (default 300 s) bounds a non-streaming attempt; `NUMES_PROXY_IDLE_TIMEOUT_MS` (default 120 s) closes a stalled stream. Free pools legitimately need 50–85 s before first output, so do not set these aggressively.
