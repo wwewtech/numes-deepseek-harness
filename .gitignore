@@ -1,0 +1,15 @@
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Temporary / test artifacts
+.tmp-*
+tmp/
+tmp-test/
+.env
+.env.*
+
+# This repo publishes documentation only; local profiles stay outside it
+.profiles/
