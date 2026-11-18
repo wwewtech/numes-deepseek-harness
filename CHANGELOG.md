@@ -4,6 +4,10 @@ All notable changes to this project. Format follows [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+### Changed
+
+- Clarified DSH compatibility: tested on 0.2.2-rc.3; rc.4/rc.5 change search behavior and fixes, not this provider setup.
+
 ## [1.2.0] — 2026-11-18
 
 ### Added

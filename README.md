@@ -128,7 +128,7 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 - **`$0` ≠ unlimited.** Free offers appear and vanish with provider prices; auto-discovery keeps the list current but cannot conjure capacity. If every free offer is gone, rounds keep failing *honestly*.
 - **`$0` ≠ instant.** The free pool measured 50–85s to first token (short pings: ~3–8s). Set a generous `max_tokens` (1500+) — reasoning tokens eat the budget, and `max_tokens: 40` yields an empty answer with `finish_reason: "length"`.
 - **`$0` ≠ private.** Providers declare their own data policies; read them before sending secrets. The proxy itself never logs your key or prompts.
-- **Not a Numes or DeepSeek product.** Independent glue, verified on DSH Desktop 0.2.2-rc.3 with a USD key on 17 Nov 2026.
+- **Not a Numes or DeepSeek product.** Independent glue, verified on DSH Desktop 0.2.2-rc.3 with a USD key on 17 Nov 2026. DSH rc.4/rc.5 only change server-side search and bug fixes, not the provider setup this repo documents.
 
 ## 🖼️ Visual tour
 
