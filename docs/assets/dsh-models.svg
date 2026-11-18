@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="430" viewBox="0 0 880 430" role="img" aria-label="Illustrative DeepSeek Harness Models page with a Custom model API card filled in">
+  <defs>
+    <style>
+      .panel  { fill: #0f1117; }
+      .card   { fill: #171a23; }
+      .field  { fill: #10121a; }
+      .line   { stroke: #262b39; }
+      .lbl    { fill: #8b93a7; }
+      .val    { fill: #e2e8f0; }
+      .mono   { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+      .sans   { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .violet { fill: #a78bfa; }
+      .green  { fill: #4ade80; }
+      .amber  { fill: #fbbf24; }
+    </style>
+  </defs>
+
+  <rect width="880" height="430" rx="12" fill="#0b0d13"/>
+  <rect x="0" y="0" width="196" height="430" rx="12" fill="#0f1117"/>
+  <rect x="188" y="0" width="8" height="430" fill="#0f1117"/>
+
+  <text x="24" y="38" class="sans" font-size="13" font-weight="600" fill="#6b7280">SETTINGS</text>
+  <rect x="16" y="54" width="164" height="30" rx="7" fill="#1d2030"/>
+  <text x="32" y="74" class="sans" font-size="13.5" fill="#e2e8f0">General</text>
+  <text x="32" y="112" class="sans" font-size="13.5" fill="#8b93a7">Models</text>
+  <text x="32" y="150" class="sans" font-size="13.5" fill="#8b93a7">Plugins</text>
+  <text x="32" y="188" class="sans" font-size="13.5" fill="#8b93a7">Account</text>
+
+  <text x="224" y="44" class="sans" font-size="19" font-weight="600" fill="#f1f5f9">Models</text>
+  <text x="224" y="68" class="sans" font-size="12.5" fill="#6b7280">illustrative — provider list</text>
+
+  <rect x="224" y="86" width="620" height="58" rx="10" class="card"/>
+  <text x="246" y="112" class="sans" font-size="14" fill="#e2e8f0">DeepSeek</text>
+  <text x="246" y="130" class="sans" font-size="11.5" fill="#6b7280">built in · key configured</text>
+  <circle cx="812" cy="115" r="5" fill="#4ade80"/>
+
+  <rect x="224" y="156" width="620" height="248" rx="10" class="card" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="246" y="184" class="sans" font-size="14.5" font-weight="600" fill="#e2e8f0">Numes free (auto-failover)</text>
+  <rect x="470" y="170" width="74" height="20" rx="10" fill="#241f3d"/>
+  <text x="507" y="184" text-anchor="middle" class="sans" font-size="10.5" fill="#a78bfa">CUSTOM API</text>
+  <circle cx="812" cy="181" r="5" fill="#4ade80"/>
+
+  <text x="246" y="212" class="sans" font-size="11.5" class="lbl">Provider ID</text>
+  <rect x="246" y="220" width="270" height="32" rx="7" class="field" stroke="#262b39"/>
+  <text x="260" y="241" class="mono" font-size="13" fill="#e2e8f0">numes-free</text>
+
+  <text x="532" y="212" class="sans" font-size="11.5" fill="#8b93a7">Protocol</text>
+  <rect x="532" y="220" width="288" height="32" rx="7" class="field" stroke="#262b39"/>
+  <text x="546" y="241" class="mono" font-size="13" fill="#e2e8f0">OpenAI Chat Completions</text>
+
+  <text x="246" y="278" class="sans" font-size="11.5" fill="#8b93a7">Base URL</text>
+  <rect x="246" y="286" width="574" height="32" rx="7" class="field" stroke="#262b39"/>
+  <text x="260" y="307" class="mono" font-size="13" fill="#22d3ee">http://127.0.0.1:8787/v1</text>
+
+  <text x="246" y="344" class="sans" font-size="11.5" fill="#8b93a7">API key</text>
+  <rect x="246" y="352" width="574" height="32" rx="7" class="field" stroke="#262b39"/>
+  <text x="260" y="373" class="mono" font-size="13" fill="#6b7280">local-proxy</text>
+  <text x="600" y="373" class="sans" font-size="11" fill="#4ade80">✓ placeholder — real key stays in the proxy</text>
+
+  <rect x="700" y="88" width="0" height="0" fill="none"/>
+  <text x="224" y="422" class="sans" font-size="10.5" fill="#4b5563">Nothing here is real account data: the provider id, placeholder key and ports are examples.</text>
+</svg>

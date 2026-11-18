@@ -130,6 +130,16 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 - **`$0` ≠ private.** Providers declare their own data policies; read them before sending secrets. The proxy itself never logs your key or prompts.
 - **Not a Numes or DeepSeek product.** Independent glue, verified on DSH Desktop 0.2.2-rc.3 with a USD key on 17 Nov 2026.
 
+## 🖼️ Visual tour
+
+| Terminal | DSH Models page | Retry flow |
+|---|---|---|
+| <img src="docs/assets/terminal.svg" width="280"> | <img src="docs/assets/dsh-models.svg" width="280"> | <img src="docs/assets/flow.svg" width="280"> |
+
+<sub>Illustrative mockups — no real account data is shown anywhere in this repo.</sub>
+
+---
+
 ## 📚 Everything else
 
 | | |
@@ -140,6 +150,7 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 | ⚙️ DSH config blocks | [configs/](configs/) — direct and proxy routes |
 | 📋 Changelog | [CHANGELOG.md](CHANGELOG.md) — what changed in each version |
 | 🛡️ Security & contributing | [SECURITY.md](SECURITY.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
+| 🧪 **Examples** | [`examples/`](examples/) — curl, Python, PowerShell, Node, tool-calls |
 
 ## ✅ What CI checks
 

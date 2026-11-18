@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="470" viewBox="0 0 880 470" role="img" aria-label="Illustrative terminal session: proxy startup, health check and a successful request">
+  <defs>
+    <linearGradient id="tbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#12141c"/>
+      <stop offset="100%" stop-color="#0d0f16"/>
+    </linearGradient>
+    <style>
+      .bar { fill: #1b1e28; }
+      .dot-r { fill: #ff5f57; } .dot-y { fill: #febc2e; } .dot-g { fill: #28c840; }
+      .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+      .dim  { fill: #6b7280; } .text { fill: #d1d5db; }
+      .green{ fill: #4ade80; } .cyan { fill: #22d3ee; } .violet { fill: #a78bfa; }
+      .amber{ fill: #fbbf24; } .pink { fill: #f472b6; }
+      .note { fill: #94a3b8; }
+    </style>
+  </defs>
+
+  <rect width="880" height="470" rx="12" fill="url(#tbg)"/>
+  <rect width="880" height="34" rx="12" fill="#1b1e28"/>
+  <rect y="22" width="880" height="12" fill="#1b1e28"/>
+  <circle cx="22" cy="17" r="6" class="dot-r"/>
+  <circle cx="44" cy="17" r="6" class="dot-y"/>
+  <circle cx="66" cy="17" r="6" class="dot-g"/>
+  <text x="440" y="22" text-anchor="middle" class="mono" font-size="12" fill="#8b93a7">terminal — illustrative session</text>
+
+  <g class="mono" font-size="13.5">
+    <text x="24" y="66" class="dim">$</text>
+    <text x="42" y="66" class="text">node tools/numes-free-failover.mjs</text>
+
+    <text x="24" y="94" class="dim">2026-11-18T09:00:01.104Z</text>
+    <text x="222" y="94" class="green">listening on http://127.0.0.1:8787</text>
+    <text x="470" y="94" class="dim">(chain of 9 free models)</text>
+
+    <text x="24" y="118" class="dim">2026-11-18T09:00:01.106Z</text>
+    <text x="222" y="118" class="text">upstream https://api.numes.ai/api/v1; key source:</text>
+    <text x="585" y="118" class="violet">~/.dsh/.credentials.yaml</text>
+
+    <text x="24" y="142" class="dim">2026-11-18T09:00:01.108Z</text>
+    <text x="222" y="142" class="text">retry rounds: backoff</text>
+    <text x="392" y="142" class="cyan">5s → 10s → 15s → 30s → 60s → 120s → 300s</text>
+
+    <text x="24" y="166" class="dim">2026-11-18T09:00:01.109Z</text>
+    <text x="222" y="166" class="green">free guard:</text>
+    <text x="330" y="166" class="text">:free suffix +</text>
+    <text x="452" y="166" class="cyan">provider.max_price{0,0}</text>
+    <text x="640" y="166" class="text">on every request</text>
+
+    <text x="24" y="190" class="dim">2026-11-18T09:00:01.111Z</text>
+    <text x="222" y="190" class="text">catalogue discovery: every 300s from GET /models</text>
+
+    <text x="24" y="214" class="dim">2026-11-18T09:00:02.388Z</text>
+    <text x="222" y="214" class="green">discovery: 9 free models in catalogue</text>
+
+    <text x="24" y="252" class="dim">$</text>
+    <text x="42" y="252" class="text">curl -s localhost:8787/status | jq .free.guard,.retry</text>
+
+    <text x="24" y="280" class="pink">":free suffix + provider.max_price {prompt:0, completion:0} on every request"</text>
+    <text x="24" y="304" class="amber">{</text>
+    <text x="42" y="326" class="text">"backoffMs": [</text>
+    <text x="60" y="348" class="cyan">5000, 10000, 15000, 30000, 60000, 120000, 300000</text>
+    <text x="42" y="370" class="text">],</text>
+    <text x="42" y="392" class="text">"rounds": 0,</text>
+    <text x="42" y="414" class="text">"honourRetryAfter": true</text>
+    <text x="24" y="436" class="amber">}</text>
+  </g>
+</svg>
