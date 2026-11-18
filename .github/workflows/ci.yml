@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax check
+        run: node --check tools/numes-free-failover.mjs
+
+      - name: Repository checks (links, secrets, configs, guards)
+        run: node tools/check-repo.mjs
+
+      - name: Proxy boots and serves /health offline
+        run: |
+          NUMES_API_KEY=sk-dummy-for-ci NUMES_PROXY_PORT=8799 \
+            node tools/numes-free-failover.mjs > /tmp/proxy.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:8799/health -o /tmp/health.json 2>/dev/null && break
+            sleep 0.5
+          done
+          cat /tmp/proxy.log
+          node -e "const h=require('/tmp/health.json'); if(!h.ok) throw 0; if(!Array.isArray(h.chain)||!h.chain.length) throw 0; console.log('health OK, chain length', h.chain.length)"
+
+      - name: Paid-model guard rejects non-free ids without network
+        run: |
+          NUMES_API_KEY=sk-dummy-for-ci NUMES_PROXY_PORT=8798 \
+            node tools/numes-free-failover.mjs > /tmp/proxy2.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:8798/health > /dev/null 2>&1 && break
+            sleep 0.5
+          done
+          code=$(curl -s -o /tmp/guard.json -w '%{http_code}' \
+            -X POST http://127.0.0.1:8798/v1/chat/completions \
+            -H 'Content-Type: application/json' \
+            -H 'X-Numes-Force-Model: moonshotai/kimi-k3.1-pro' \
+            -d '{"model":"x","messages":[{"role":"user","content":"hi"}]}')
+          echo "status=$code"; cat /tmp/guard.json
+          test "$code" = "400" || { echo '::error::guard did not reject a paid model id'; exit 1; }
+          grep -q 'non-free' /tmp/guard.json || { echo '::error::unexpected guard message'; exit 1; }

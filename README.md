@@ -1,15 +1,20 @@
 <div align="center">
 
+<img src="docs/assets/banner.svg" alt="Numes × DeepSeek Harness — free models, hard $0 route, never-give-up retries, auto-discovery" width="900">
+
 # Numes × DeepSeek Harness
 
 **Free models, smart retries, zero paid-fallback risk — as a local proxy in front of [DSH](https://github.com/deepseek-ai/deepseek-harness).**
 
+[![CI](https://github.com/wwewtech/numes-deepseek-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/wwewtech/numes-deepseek-harness/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![No dependencies](https://img.shields.io/badge/dependencies-none-6ead4a.svg)](tools/numes-free-failover.mjs)
 [![Node 18+](https://img.shields.io/badge/node-18%2B-339933.svg)](https://nodejs.org)
 [![Numes API](https://img.shields.io/badge/Numes-%240%20free%20route-8b5cf6.svg)](https://numes.ai/docs/models#free-models)
 
-[English](README.md) · **Русский** · [Full setup (RU)](docs/SETUP.ru.md) · [Full setup (EN)](docs/SETUP.md)
+[English](README.md) · **Русский** · [Full setup (RU)](docs/SETUP.ru.md) · [Full setup (EN)](docs/SETUP.md) · [Changelog](CHANGELOG.md)
+
+<sub>Listed in [vvlife/awesome-deepseek-harness-plugins](https://github.com/vvlife/awesome-deepseek-harness-plugins). Independent project — not affiliated with DeepSeek or Numes.</sub>
 
 </div>
 
@@ -133,7 +138,25 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 | 🇬🇧 Full setup guide | [docs/SETUP.md](docs/SETUP.md) — the same, in English |
 | 🔧 Proxy reference | [tools/README.md](tools/README.md) — every env var, header, and behaviour |
 | ⚙️ DSH config blocks | [configs/](configs/) — direct and proxy routes |
+| 📋 Changelog | [CHANGELOG.md](CHANGELOG.md) — what changed in each version |
 | 🛡️ Security & contributing | [SECURITY.md](SECURITY.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
+
+## ✅ What CI checks
+
+Every push runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml), which verifies the claims made above rather than trusting them:
+
+- the proxy parses, boots, and answers `/health` with a non-empty chain;
+- the **paid-model guard really returns `400`** for a non-free id, before any network I/O;
+- every relative Markdown link resolves;
+- no Numes key (or GitHub token) is committed;
+- each config lists only `:free` Numes ids;
+- the source still contains the guard, `max_price`, backoff, `Retry-After`, discovery, and fatal-abort code the README advertises.
+
+Run the same checks locally:
+
+```bash
+node tools/check-repo.mjs
+```
 
 ## 📄 License
 
