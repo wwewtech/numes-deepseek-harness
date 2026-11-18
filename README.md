@@ -132,11 +132,20 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 
 ## 🖼️ Visual tour
 
-| Terminal | DSH Models page | Retry flow |
-|---|---|---|
-| <img src="docs/assets/terminal.svg" width="280"> | <img src="docs/assets/dsh-models.svg" width="280"> | <img src="docs/assets/flow.svg" width="280"> |
+<table>
+  <tr>
+    <td align="center"><strong>Terminal</strong></td>
+    <td align="center"><strong>DSH Models page</strong></td>
+    <td align="center"><strong>Retry flow</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/terminal.png" width="280" alt="Proxy terminal output: startup, /status JSON, cost guard"/></td>
+    <td><img src="docs/assets/dsh-models.png" width="280" alt="DSH Models settings page with numes-free provider filled in"/></td>
+    <td><img src="docs/assets/flow.png" width="280" alt="Request lifecycle: guard → max_price → Numes → stream or retry"/></td>
+  </tr>
+</table>
 
-<sub>Illustrative mockups — no real account data is shown anywhere in this repo.</sub>
+<sub>🛡️ Illustrations are **mockups, not real screenshots** — no usernames, keys, or account data shown anywhere. SVG originals in [`docs/assets/`](docs/assets/); PNG rendered via headless Chrome.</sub>
 
 ---
 
