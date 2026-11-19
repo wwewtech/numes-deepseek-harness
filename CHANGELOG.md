@@ -2,18 +2,19 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/), versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] — 2026-11-19
 
 ### Added
 
-- **Installable DSH bundle** — root `package.json` (`dsh.bundle.patch`), `cordis.patch.yml`, and [`.dsh-plugin/manifest.json`](.dsh-plugin/manifest.json) now make the repo installable via `dsh plugin add github:wwewtech/numes-deepseek-harness`.
-- **Bundle quickstart** documented in `README.md`, `README.ru.md`, `README.zh.md`.
-- **CI checks for installability**: verifies root `package.json` declares `dsh.bundle.patch`, `.dsh-plugin/manifest.json` references real files, and the registered entry exists.
+- **Installable DSH bundle.** The repo is now a first-class DSH plugin — `dsh plugin add github:wwewtech/numes-deepseek-harness` adds the provider config automatically. The proxy still needs to be run separately.
+- Root `package.json` (`dsh.bundle.patch: ./cordis.patch.yml`), [`cordis.patch.yml`](cordis.patch.yml), and [`.dsh-plugin/manifest.json`](.dsh-plugin/manifest.json) for source-level installability proof.
+- **Chinese README** (`README.zh.md`) with bundle quickstart.
+- **Bundle quickstart** in `README.md`, `README.ru.md`, `docs/SETUP.md`, `docs/SETUP.ru.md`.
+- **CI installability check** — `tools/check-repo.mjs` now verifies `dsh.bundle.patch`, the manifest references real files, and the entry point exists.
 
 ### Changed
 
-- Clarified DSH compatibility: tested on 0.2.2-rc.3; rc.4/rc.5 change search behavior and fixes, not this provider setup.
-- Removed broken 4 KB placeholder PNG files left over from the failed headless capture.
+- Removed leftover empty PNG placeholders from the failed headless capture attempt.
 
 ## [1.2.0] — 2026-11-18
 
