@@ -12,7 +12,7 @@
 [![Node 18+](https://img.shields.io/badge/node-18%2B-339933.svg)](https://nodejs.org)
 [![Numes API](https://img.shields.io/badge/Numes-%240%20free%20route-8b5cf6.svg)](https://numes.ai/docs/models#free-models)
 
-[English](README.md) · **Русский** · [Full setup (RU)](docs/SETUP.ru.md) · [Full setup (EN)](docs/SETUP.md) · [Changelog](CHANGELOG.md)
+[English](README.md) · **Русский** · **中文** · [Full setup (EN)](docs/SETUP.md) · [Full setup (RU)](docs/SETUP.ru.md) · [Full setup (中文)](docs/SETUP.zh.md) · [Changelog](CHANGELOG.md)
 
 <sub>Listed in [vvlife/awesome-deepseek-harness-plugins](https://github.com/vvlife/awesome-deepseek-harness-plugins). Independent project — not affiliated with DeepSeek or Numes.</sub>
 
@@ -157,7 +157,8 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 |---|---|
 | 🇷🇺 **Полный гайд (рекомендуется)** | [docs/SETUP.ru.md](docs/SETUP.ru.md) — от установки DSH до первого ответа, с разбором ошибок |
 | 🇬🇧 Full setup guide | [docs/SETUP.md](docs/SETUP.md) — the same, in English |
-| 🇨🇳 **中国人（全中文 README）** | [README.zh.md](README.zh.md) — 中文完整安装与使用指南 |
+| 🇨🇳 **中文全指南** | [docs/SETUP.zh.md](docs/SETUP.zh.md) — 完整安装、排错与 API 用法 |
+| 🇨🇳 **中国人（README）** | [README.zh.md](README.zh.md) — 项目总览 |
 | 🔧 Proxy reference | [tools/README.md](tools/README.md) — every env var, header, and behaviour |
 | ⚙️ DSH config blocks | [configs/](configs/) — direct and proxy routes |
 | 📦 DSH bundle | [`.dsh-plugin/manifest.json`](.dsh-plugin/manifest.json) + root `package.json` — `dsh plugin add github:wwewtech/numes-deepseek-harness` |
@@ -175,12 +176,14 @@ Every push runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml), which ve
 - no Numes key (or GitHub token) is committed;
 - each config lists only `:free` Numes ids;
 - the source still contains the guard, `max_price`, backoff, `Retry-After`, discovery, and fatal-abort code the README advertises;
-- the **root `package.json`** declares `dsh.bundle.patch`, `.dsh-plugin/manifest.json` references a real `cordis.patch.yml`, and the listed entry file exists.
+- the **root `package.json`** declares `dsh.bundle.patch`, `.dsh-plugin/manifest.json` references a real `cordis.patch.yml`, and the listed entry file exists;
+- **7 integration tests** (`tests/proxy.test.mjs`) covering the guard, `/health`, `/status`, `/v1/models`, chain override, unknown routes and bad JSON.
 
 Run the same checks locally:
 
 ```bash
 node tools/check-repo.mjs
+npm test
 ```
 
 ## 📄 License

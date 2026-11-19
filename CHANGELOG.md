@@ -2,6 +2,17 @@
 
 All notable changes to this project. Format follows [Keep a Changelog](https://keepachangelog.com/), versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **`docs/SETUP.zh.md`** — full Chinese setup guide, mirroring the EN/RU walkthroughs. Lets zh-focused awesome-lists see a complete on-ramp.
+- **Integration tests** via `node:test` — `tests/proxy.test.mjs` (7 cases) spins up the proxy with a dummy key on a random port and verifies `/health`, `/status`, `/v1/models`, the paid-model guard, chain override validation, unknown-route 404 and bad-JSON 400. Wired into CI via `npm test`.
+
+### Changed
+
+- `package.json` adds `test` and `check` scripts used by CI. No new runtime deps — `node:test` is built-in.
+
 ## [1.3.0] — 2026-11-19
 
 ### Added
