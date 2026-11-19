@@ -26,6 +26,9 @@ jobs:
       - name: Repository checks (links, secrets, configs, guards)
         run: node tools/check-repo.mjs
 
+      - name: Integration tests (node:test)
+        run: npm test
+
       - name: Proxy boots and serves /health offline
         run: |
           NUMES_API_KEY=sk-dummy-for-ci NUMES_PROXY_PORT=8799 \
