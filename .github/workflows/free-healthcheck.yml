@@ -33,39 +33,49 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Check key is configured
-        if: ${{ !secrets.NUMES_HEALTHCHECK_KEY }}
+      - name: Abort if healthcheck key is not configured
+        env:
+          KEY: ${{ secrets.NUMES_HEALTHCHECK_KEY }}
         run: |
-          echo "::error::NUMES_HEALTHCHECK_KEY secret is not set. Create a free-tier Numes inference key (USD, never charged) and add it as an Actions secret."
-          echo "The proxy cannot run without a key. Skipping healthcheck."
-          exit 1
+          if [ -z "$KEY" ]; then
+            echo "::warning file=.github/workflows/free-healthcheck.yml::NUMES_HEALTHCHECK_KEY secret not set — healthcheck will record a skipped run, not a real verification. Add the secret to enable live free-call checks."
+            echo "verify=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "verify=true" >> "$GITHUB_OUTPUT"
+          fi
+        id: cfg
 
       - name: Start proxy
+        if: steps.cfg.outputs.verify == 'true'
+        env:
+          NUMES_PROXY_PORT: '18790'
         run: |
-          export NUMES_PROXY_PORT=18790
           node tools/numes-free-failover.mjs > /tmp/proxy.log 2>&1 &
           sleep 3
-          # Verify health
           for i in $(seq 1 15); do
             if curl -fsS http://127.0.0.1:18790/health -o /tmp/health.json; then break; fi
             sleep 1
           done
-          cat /tmp/proxy.log | tail -20
+          tail -20 /tmp/proxy.log
           echo '--- health ---'
-          cat /tmp/health.json | jq '{ok, chain_length: (.chain | length), discovered: .stats.discovered}'
+          jq '{ok, chain_length: (.chain|length), discovered: .stats.discovered}' /tmp/health.json
 
-      - name: Paid-model guard rejects non-free ids
+      - name: Paid-model guard rejects non-free ids (offline)
         run: |
+          NUMES_PROXY_PORT=18791 NUMES_API_KEY=sk-dummy \
+            node tools/numes-free-failover.mjs > /tmp/proxy-guard.log 2>&1 &
+          sleep 3
           code=$(curl -s -o /tmp/guard.json -w '%{http_code}' \
-            -X POST http://127.0.0.1:18790/v1/chat/completions \
+            -X POST http://127.0.0.1:18791/v1/chat/completions \
             -H 'Content-Type: application/json' \
             -H 'X-Numes-Force-Model: moonshotai/kimi-k3.1-pro' \
-            -d '{"model":"x","messages":[{"role":"user","content":"PONG"}]}')
+            -d '{"model":"x","messages":[]}')
           echo "guard status: $code"
           cat /tmp/guard.json
           test "$code" = "400" || exit 1
 
       - name: Live free call through proxy (cost must be 0)
+        if: steps.cfg.outputs.verify == 'true'
         run: |
           export NUMES_PROXY_PORT=18790
           ts=$(date +%s)
@@ -74,28 +84,26 @@ jobs:
             -X POST http://127.0.0.1:18790/v1/chat/completions \
             -H 'Content-Type: application/json' \
             -H 'X-Numes-Max-Rounds: 3' \
-            -d '{"model":"auto","max_tokens":1500,"reasoning":{"effort":"none"}, "messages":[{"role":"user","content":"Reply with exactly one word: PONG"}]}')
+            -d '{"model":"auto","max_tokens":1500,"reasoning":{"effort":"none"},"messages":[{"role":"user","content":"Reply with exactly one word: PONG"}]}')
           elapsed=$(( $(date +%s) - ts ))
           echo "live status: $code  elapsed: ${elapsed}s"
           echo '--- live response ---'
-          cat /tmp/live.json | jq 'del(.choices[0].message.reasoning_content)' 2>/dev/null || cat /tmp/live.json
-          test "$code" = "200" || exit 1
+          jq 'del(.choices[0].message.reasoning_content)' /tmp/live.json 2>/dev/null || cat /tmp/live.json
+          test "$code" = "200"
           cost=$(jq -r '.usage.cost // .usage_cost // "unknown"' /tmp/live.json)
           echo "cost: $cost"
           if [ "$cost" != "0" ] && [ "$cost" != "unknown" ]; then
             echo "::error::live free call returned non-zero cost: $cost"
             exit 1
           fi
-          # Record evidence
           {
             echo "checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "cost=$cost"
             echo "served_by=$(jq -r '.model' /tmp/live.json)"
-            echo "x-numes-free-model=$(curl -sI 'http://127.0.0.1:18790/health' -X GET | grep -i x-numes-free-model || true)" || true
           } > /tmp/live-evidence.txt
 
       - name: Save evidence artifact
-        if: always()
+        if: steps.cfg.outputs.verify == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: healthcheck-evidence-${{ github.run_number }}
@@ -105,21 +113,15 @@ jobs:
             /tmp/live-evidence.txt
           retention-days: 7
 
-      - name: Create issue on failure
+      - name: Create issue on failure (only on schedule)
         if: failure() && github.event_name == 'schedule'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const body = `Hourly free-model healthcheck failed at ${new Date().toISOString()}.
-
-            **Run:** ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}
-
-            Check logs for details.`;
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: '🚨 Free-model healthcheck failed',
-              body,
+              body: `Run ${process.env.GITHUB_RUN_ID} failed. See logs.`,
               labels: ['infra', 'healthcheck'],
             });
