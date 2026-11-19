@@ -1,0 +1,21 @@
+{
+  "version": "1.2.0",
+  "entry": "tools/numes-free-failover.mjs",
+  "category": "extension",
+  "description": "Zero-dependency local proxy wiring Numes's $0 :free model pool into DSH as an OpenAI-compatible provider",
+  "keywords": [
+    "numes",
+    "free-models",
+    "proxy",
+    "failover",
+    "openai-compatible"
+  ],
+  "icon": "assets/logo.svg",
+  "displayName": "Numes Free Models Proxy",
+  "dsh": {
+    "minVersion": "0.2.0",
+    "maxVersion": "0.3.0"
+  },
+  "name": "numes-deepseek-harness",
+  "patch": "cordis.patch.yml"
+}
