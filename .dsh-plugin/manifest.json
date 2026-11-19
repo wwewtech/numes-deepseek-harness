@@ -1,21 +1,30 @@
 {
-  "version": "1.2.0",
   "entry": "tools/numes-free-failover.mjs",
+  "icon": "assets/logo.svg",
+  "patch": "cordis.patch.yml",
+  "displayName": "Numes Free Models Proxy",
+  "description": "Zero-dependency local proxy that wires Numes's $0 :free model pool into DSH via the built-in OpenAI-compatible adapter. Never-give-up retries, Retry-After-aware backoff, free-model auto-discovery.",
+  "homepage": "https://github.com/wwewtech/numes-deepseek-harness",
+  "version": "1.2.0",
+  "engines": {
+    "dsh": ">=0.2.0",
+    "node": ">=18"
+  },
+  "type": "bundle",
+  "license": "MIT",
+  "dsh": {
+    "api": "cordis",
+    "minVersion": "0.2.0"
+  },
   "category": "extension",
-  "description": "Zero-dependency local proxy wiring Numes's $0 :free model pool into DSH as an OpenAI-compatible provider",
+  "repository": "https://github.com/wwewtech/numes-deepseek-harness",
+  "name": "numes-deepseek-harness",
   "keywords": [
     "numes",
     "free-models",
     "proxy",
     "failover",
-    "openai-compatible"
-  ],
-  "icon": "assets/logo.svg",
-  "displayName": "Numes Free Models Proxy",
-  "dsh": {
-    "minVersion": "0.2.0",
-    "maxVersion": "0.3.0"
-  },
-  "name": "numes-deepseek-harness",
-  "patch": "cordis.patch.yml"
+    "openai-compatible",
+    "dsh-plugin"
+  ]
 }

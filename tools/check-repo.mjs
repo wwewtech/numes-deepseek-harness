@@ -109,6 +109,42 @@ for (const [label, re] of required) {
   else note(`${label}: present`);
 }
 
+// 5. Bundle / install evidence ----------------------------------------------
+// walkinglabs / SihanTeng / awesome-deepseekharness all require actual bundle
+// evidence, not just proxy files: `package.json` with `dsh.bundle.patch`,
+// a `.dsh-plugin/manifest.json`, and a real `cordis.patch.yml` on disk.
+console.log('5. DSH bundle install evidence');
+const pkgPath = path.join(root, 'package.json');
+if (!fs.existsSync(pkgPath)) {
+  problems.push('root package.json missing (required for dsh plugin add)');
+} else {
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  if (!pkg.dsh?.bundle?.patch) problems.push('package.json missing dsh.bundle.patch');
+  else note(`dsh.bundle.patch = ${pkg.dsh.bundle.patch}`);
+  if (!pkg.name) problems.push('package.json missing name');
+  if (!pkg.main) problems.push('package.json missing main entry');
+  if (pkg.main && !fs.existsSync(path.join(root, pkg.main))) problems.push(`package.json main entry missing: ${pkg.main}`);
+}
+const manifestPath = path.join(root, '.dsh-plugin', 'manifest.json');
+if (!fs.existsSync(manifestPath)) {
+  problems.push('.dsh-plugin/manifest.json missing (required by DSH Inclusion Policy)');
+} else {
+  const mf = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  for (const field of ['name', 'version', 'description', 'entry', 'patch']) {
+    if (!mf[field]) problems.push(`.dsh-plugin/manifest.json missing required field: ${field}`);
+  }
+  if (mf.entry && !fs.existsSync(path.join(root, mf.entry))) problems.push(`.dsh-plugin/manifest.json entry missing: ${mf.entry}`);
+  if (mf.patch && !fs.existsSync(path.join(root, mf.patch))) problems.push(`.dsh-plugin/manifest.json patch missing: ${mf.patch}`);
+  note(`manifest ${mf.name}@${mf.version} ok`);
+}
+const rootPatch = path.join(root, 'cordis.patch.yml');
+if (!fs.existsSync(rootPatch)) problems.push('root cordis.patch.yml missing (bundle points at it)');
+else {
+  const text = fs.readFileSync(rootPatch, 'utf8');
+  if (!/- id: llm-pi-ai/.test(text)) problems.push('cordis.patch.yml does not register an llm-pi-ai provider');
+  else note('cordis.patch.yml registers a provider');
+}
+
 // Report -------------------------------------------------------------------
 console.log('');
 if (problems.length) {

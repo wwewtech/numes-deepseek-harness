@@ -5,6 +5,12 @@ English: [README.md](README.md) · [Full guide](docs/SETUP.md)
 
 Это не плагин, а доcументированный способ добавить Numes в уже существующий DSH через `Settings → Models` с маршрутом `llm-pi-ai`.
 
+**Установка одной командой как DSH bundle:**
+```
+dsh plugin --profile desktop add github:wwewtech/numes-deepseek-harness
+```
+Бандл добавит в профиль `cordis.patch.yml` и зарегистрирует провайдер `numes-free` через встроенный адаптер `llm-pi-ai`. Прокси ниже запускать всё ещё нужно.
+
 ## Краткая установка
 
 1. [Numes → Keys](https://numes.ai/dashboard/keys) → **Create key** → **Inference** → валюта, например USD → скопируйте один раз показанный секрет.

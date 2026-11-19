@@ -44,6 +44,8 @@
 
 ## 🚀 快速开始 (2 分钟)
 
+> 想用 DSH bundle 安装？执行：`dsh plugin --profile <profile> add github:wwewtech/numes-deepseek-harness`。捆绑会把 `cordis.patch.yml` 合并到目标 profile，并为你注册 `numes-free` 提供方。下面的代理仍需运行。
+
 **1.** 在 [numes.ai/dashboard/keys](https://numes.ai/dashboard/keys) 创建 Numes **推理密钥**（货币永久；免费请求需要验证邮箱）。
 
 **2.** 运行代理：

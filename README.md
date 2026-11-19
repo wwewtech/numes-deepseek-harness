@@ -44,6 +44,8 @@
 
 ## 🚀 Quick start (2 minutes)
 
+> Prefer installing as a DSH bundle? `dsh plugin --profile <your-profile> add github:wwewtech/numes-deepseek-harness` — the bundle merges `cordis.patch.yml` into the profile and registers the `numes-free` provider for you. You still need to run the proxy below.
+
 **1.** Create a Numes **inference key** at [numes.ai/dashboard/keys](https://numes.ai/dashboard/keys) (currency is permanent; free requests need a verified email).
 
 **2.** Run the proxy:
@@ -155,8 +157,10 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 |---|---|
 | 🇷🇺 **Полный гайд (рекомендуется)** | [docs/SETUP.ru.md](docs/SETUP.ru.md) — от установки DSH до первого ответа, с разбором ошибок |
 | 🇬🇧 Full setup guide | [docs/SETUP.md](docs/SETUP.md) — the same, in English |
+| 🇨🇳 **中国人（全中文 README）** | [README.zh.md](README.zh.md) — 中文完整安装与使用指南 |
 | 🔧 Proxy reference | [tools/README.md](tools/README.md) — every env var, header, and behaviour |
 | ⚙️ DSH config blocks | [configs/](configs/) — direct and proxy routes |
+| 📦 DSH bundle | [`.dsh-plugin/manifest.json`](.dsh-plugin/manifest.json) + root `package.json` — `dsh plugin add github:wwewtech/numes-deepseek-harness` |
 | 📋 Changelog | [CHANGELOG.md](CHANGELOG.md) — what changed in each version |
 | 🛡️ Security & contributing | [SECURITY.md](SECURITY.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
 | 🧪 **Examples** | [`examples/`](examples/) — curl, Python, PowerShell, Node, tool-calls |
@@ -170,7 +174,8 @@ Every push runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml), which ve
 - every relative Markdown link resolves;
 - no Numes key (or GitHub token) is committed;
 - each config lists only `:free` Numes ids;
-- the source still contains the guard, `max_price`, backoff, `Retry-After`, discovery, and fatal-abort code the README advertises.
+- the source still contains the guard, `max_price`, backoff, `Retry-After`, discovery, and fatal-abort code the README advertises;
+- the **root `package.json`** declares `dsh.bundle.patch`, `.dsh-plugin/manifest.json` references a real `cordis.patch.yml`, and the listed entry file exists.
 
 Run the same checks locally:
 

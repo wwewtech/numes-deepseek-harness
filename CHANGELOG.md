@@ -4,9 +4,16 @@ All notable changes to this project. Format follows [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+### Added
+
+- **Installable DSH bundle** — root `package.json` (`dsh.bundle.patch`), `cordis.patch.yml`, and [`.dsh-plugin/manifest.json`](.dsh-plugin/manifest.json) now make the repo installable via `dsh plugin add github:wwewtech/numes-deepseek-harness`.
+- **Bundle quickstart** documented in `README.md`, `README.ru.md`, `README.zh.md`.
+- **CI checks for installability**: verifies root `package.json` declares `dsh.bundle.patch`, `.dsh-plugin/manifest.json` references real files, and the registered entry exists.
+
 ### Changed
 
 - Clarified DSH compatibility: tested on 0.2.2-rc.3; rc.4/rc.5 change search behavior and fixes, not this provider setup.
+- Removed broken 4 KB placeholder PNG files left over from the failed headless capture.
 
 ## [1.2.0] — 2026-11-18
 
