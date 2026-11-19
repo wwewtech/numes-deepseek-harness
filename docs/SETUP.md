@@ -2,10 +2,17 @@
 
 **Goal:** make Numes available in DeepSeek Harness (DSH) via its built-in `llm-pi-ai` adapter, and keep free calls on explicit **`author/model:free`** routes.
 
+**Install as a bundle (recommended for new setups):**
+```sh
+dsh plugin --profile desktop add github:wwewtech/numes-deepseek-harness
+```
+Then run the proxy (`node tools/numes-free-failover.mjs`) and select the pre-registered `numes-free` provider in the model picker. The manual steps below are equivalent, just slower.
+
 Verified 17 November 2026 on DSH Desktop 0.2.2-rc.3, Windows, a USD Numes key. Re-verified 18 November 2026: DSH rc.4/rc.5 only changed server-side search and bug fixes — the provider configuration flow and keys handling described below are unchanged. This is a configuration guide, **not a DSH plugin**, and it does not run an installer against your profile. It is independent of both services.
 
 > Existing DSH + existing key? Start at [step 3](#3-create-an-inference-key).
 > Already configured but `QUOTA` / `402` appear? Jump to [step 5, `:free`](#5-select-free-models).
+> Want the fast track? `dsh plugin add github:wwewtech/numes-deepseek-harness`, run the proxy, pick `numes-free`. Done.
 
 ## 0. Prerequisites
 
