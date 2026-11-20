@@ -137,17 +137,17 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 <table>
   <tr>
     <td align="center"><strong>Terminal</strong></td>
-    <td align="center"><strong>DSH Models page</strong></td>
+    <td align="center"><strong>DSH model picker (real screenshot)</strong></td>
     <td align="center"><strong>Retry flow</strong></td>
   </tr>
   <tr>
     <td><img src="docs/assets/terminal.png" width="280" alt="Proxy terminal output: startup, /status JSON, cost guard"/></td>
-    <td><img src="docs/assets/dsh-models.png" width="280" alt="DSH Models settings page with numes-free provider filled in"/></td>
+    <td><img src="docs/assets/dsh-model-picker.png" width="280" alt="DSH model picker showing Numes free (auto-failover) selected"/></td>
     <td><img src="docs/assets/flow.png" width="280" alt="Request lifecycle: guard → max_price → Numes → stream or retry"/></td>
   </tr>
 </table>
 
-<sub>🛡️ Illustrations are **mockups, not real screenshots** — no usernames, keys, or account data shown anywhere. SVG originals in [`docs/assets/`](docs/assets/); PNG rendered via headless Chrome.</sub>
+<sub>🛡️ `dsh-model-picker.png` and `dsh-model-list.png` are **real screenshots** from DSH Desktop 0.2.2-rc.3 showing the bundle-installed provider. `terminal.png` and `flow.png` are illustrative mockups. SVG originals in [`docs/assets/`](docs/assets/).</sub>
 
 ---
 
@@ -165,6 +165,7 @@ curl http://127.0.0.1:8787/v1/chat/completions \
 | 📋 Changelog | [CHANGELOG.md](CHANGELOG.md) — what changed in each version |
 | 🛡️ Security & contributing | [SECURITY.md](SECURITY.md) · [CONTRIBUTING.md](CONTRIBUTING.md) |
 | 🧪 **Examples** | [`examples/`](examples/) — curl, Python, PowerShell, Node, tool-calls |
+| 📸 **Real screenshots** | [`dsh-model-picker.png`](docs/assets/dsh-model-picker.png) · [`dsh-model-list.png`](docs/assets/dsh-model-list.png) |
 
 ## ✅ What CI checks
 
