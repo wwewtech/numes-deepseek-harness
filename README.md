@@ -44,7 +44,7 @@
 
 ## 🚀 Quick start (2 minutes)
 
-> Prefer installing as a DSH bundle? `dsh plugin --profile <your-profile> add github:wwewtech/numes-deepseek-harness` — the bundle merges `cordis.patch.yml` into the profile and registers the `numes-free` provider for you. You still need to run the proxy below.
+> Prefer installing as a DSH bundle? `dsh plugin --profile <your-profile> add github:wwewtech/numes-deepseek-harness` — the bundle merges `cordis.patch.yml` into the profile and registers the `numes-free` provider for you. You still need to run the proxy below. Verify without manual edits: `dsh --profile <your-profile> --dump-config | grep -A 4 numes-free` — expected: the provider printed by the Loader.
 
 **1.** Create a Numes **inference key** at [numes.ai/dashboard/keys](https://numes.ai/dashboard/keys) (currency is permanent; free requests need a verified email).
 

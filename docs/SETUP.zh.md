@@ -8,6 +8,25 @@ dsh plugin --profile desktop add github:wwewtech/numes-deepseek-harness
 ```
 接着启动代理（`node tools/numes-free-failover.mjs`），在模型选择框中选择预注册的 `numes-free` 即可。下面的手动步骤与该方式等价，只是更繁琐。
 
+**验证捆绑确实应用了提供方注册（无需手动修改 profile）：**
+
+```sh
+dsh --profile desktop --dump-config | grep -A 4 "numes-free"
+```
+
+若看到如下 Loader 合并视图即证明 bundle 的 `cordis.patch.yml` 行已作用于现有 `llm-pi-ai`，与手编辑等同：
+
+```yaml
+- id: llm-pi-ai
+  name: '@deepseek-ai/dsh-llm-pi-ai'
+  config:
+    providers:
+      numes-free:
+        ...
+```
+
+如果没有输出，请重复 `dsh plugin add` 以干净 profile 重试。
+
 本指南验证过：2026 年 11 月 17 日于 DSH Desktop 0.2.2-rc.3、Windows、Numes 美金密钥。2026 年 11 月 18 日再次复查：DSH rc.4/rc.5 仅调整服务端搜索与错误修复，本文档所述模型配置流程及密钥处理方式未变化。本指南为配置说明，**不是 DSH 插件**，也不会对你的 profile 运行安装器。本项目独立于两项服务。
 
 > 已有 DSH 与密钥？直接跳到[步骤 3](#3-创建-inference-密钥)。

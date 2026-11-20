@@ -6,12 +6,8 @@ All notable changes to this project. Format follows [Keep a Changelog](https://k
 
 ### Added
 
-- **`docs/SETUP.zh.md`** — full Chinese setup guide, mirroring the EN/RU walkthroughs. Lets zh-focused awesome-lists see a complete on-ramp.
-- **Integration tests** via `node:test` — `tests/proxy.test.mjs` (7 cases) spins up the proxy with a dummy key on a random port and verifies `/health`, `/status`, `/v1/models`, the paid-model guard, chain override validation, unknown-route 404 and bad-JSON 400. Wired into CI via `npm test`.
-
-### Changed
-
-- `package.json` adds `test` and `check` scripts used by CI. No new runtime deps — `node:test` is built-in.
+- **Bundle verification recipe** — `dsh --profile <name> --dump-config | grep -A 4 numes-free` — proves the `cordis.patch.yml` row applied to the stock `llm-pi-ai` provider list without manual profile editing. Documented in `docs/SETUP.md`, `docs/SETUP.ru.md`, `docs/SETUP.zh.md` and `README.md`.
+- Verified against DSH 0.2.2-rc.3: clean-profile install of `github:wwewtech/numes-deepseek-harness` followed by `--dump-config` prints the merged Loader view carrying `numes-free`.
 
 ## [1.3.0] — 2026-11-19
 

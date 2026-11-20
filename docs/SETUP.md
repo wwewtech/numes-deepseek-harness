@@ -8,6 +8,33 @@ dsh plugin --profile desktop add github:wwewtech/numes-deepseek-harness
 ```
 Then run the proxy (`node tools/numes-free-failover.mjs`) and select the pre-registered `numes-free` provider in the model picker. The manual steps below are equivalent, just slower.
 
+**Verify the bundle actually applied the provider registration** (without any manual profile editing):
+
+```sh
+dsh --profile desktop --dump-config | grep -A 4 "numes-free"
+```
+
+Expected output (Loader-merged view — the same provider you would get editing `cordis.patch.yml` by hand):
+
+```yaml
+- id: llm-pi-ai
+  name: '@deepseek-ai/dsh-llm-pi-ai'
+  config:
+    providers:
+      numes-free:
+        displayName: Numes (free, auto-failover)
+        api: openai-completions
+        baseURL: http://127.0.0.1:8787/v1
+        apiKeyEnv: NUMES_PROXY_PLACEHOLDER
+          - id: numes-free-auto
+            name: Numes free (auto-failover)
+            contextWindow: 1048576
+            maxTokens: 65536
+            reasoningEfforts: false
+```
+
+This proves the bundle's `cordis.patch.yml` row targets the existing `llm-pi-ai` plugin and merges my `providers.numes-free` mapping into its config — the convention DSH's official provider guide documents. If the command returns no output, the bundle did not install correctly: re-run `dsh plugin add` against a clean profile.
+
 Verified 17 November 2026 on DSH Desktop 0.2.2-rc.3, Windows, a USD Numes key. Re-verified 18 November 2026: DSH rc.4/rc.5 only changed server-side search and bug fixes — the provider configuration flow and keys handling described below are unchanged. This is a configuration guide, **not a DSH plugin**, and it does not run an installer against your profile. It is independent of both services.
 
 > Existing DSH + existing key? Start at [step 3](#3-create-an-inference-key).
