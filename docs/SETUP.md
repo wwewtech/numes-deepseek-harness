@@ -35,7 +35,18 @@ Expected output (Loader-merged view — the same provider you would get editing 
 
 This proves the bundle's `cordis.patch.yml` row targets the existing `llm-pi-ai` plugin and merges my `providers.numes-free` mapping into its config — the convention DSH's official provider guide documents. If the command returns no output, the bundle did not install correctly: re-run `dsh plugin add` against a clean profile.
 
-> **⚠️ Caveat — config replacement semantics.** DSH's loader patch dialect says a row with `id: llm-pi-ai` and a `config:` value replaces that existing row's config wholesale, never deep-merges ([composition reference](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/providers.md)). For an intentionally stock default profile this is exactly what I want — DSH ships no default OpenAI-compatible provider named `numes-free`, so the bundle's row matches an absent stock setting and the new entry materialises cleanly. **If you already have hand-edited providers on this profile** (other custom `providers.foo` entries), the bundle will replace the entire `config` block including those custom rows, not merge. Back up `~/.dsh/profiles/<profile>/cordis.patch.yml` before running `dsh plugin add`, and re-paste any custom providers into the bundle row afterwards if needed.
+> **⚠️ Caveat — config replacement semantics.** DSH's loader patch dialect says a row with `id: llm-pi-ai` and a `config:` value replaces that existing row's config wholesale, never deep-merges ([composition reference](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/providers.md)). For an intentionally stock default profile this is exactly what I want — DSH ships no default OpenAI-compatible provider named `numes-free`, so the bundle's row matches an absent stock setting and the new entry materialises cleanly. **If you already have hand-edited providers on this profile** (other custom `providers.foo` entries), the bundle will replace the entire `config` block including those custom rows, not merge. Use the merge helper below to keep them.
+
+**Preserve existing providers (merge helper):**
+
+If you have custom providers on `llm-pi-ai`, generate a `--patch` overlay that keeps them and adds `numes-free`:
+
+```sh
+node tools/merge-providers.mjs --profile <your-profile> > numes-merge.yml
+dsh --profile <your-profile> --patch numes-merge.yml web
+```
+
+The overlay lands in the user patch layer (above bundles), so later bundle updates cannot wipe your custom providers. The helper reads the live composed config via `dsh --dump-config` and re-emits it with `numes-free` appended.
 
 Verified 17 November 2026 on DSH Desktop 0.2.2-rc.3, Windows, a USD Numes key. Re-verified 18 November 2026: DSH rc.4/rc.5 only changed server-side search and bug fixes — the provider configuration flow and keys handling described below are unchanged. This is a configuration guide, **not a DSH plugin**, and it does not run an installer against your profile. It is independent of both services.
 

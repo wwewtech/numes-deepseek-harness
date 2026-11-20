@@ -27,7 +27,18 @@ dsh --profile desktop --dump-config | grep -A 4 "numes-free"
 
 如果没有输出，请重复 `dsh plugin add` 以干净 profile 重试。
 
-> **⚠️ Override 语义提示：** DSH 加载器的 patch 规则，`id: llm-pi-ai` + `config:` 会**整段替换**该插件的 `config`，不做深层合并。对于全新默认 profile 这是预期的（不会替换任何东西）。**如果你已经在该 profile 手改过其他 provider**（其他自定义 `providers.xxx`），bundle先会替换整个块。请安装前先备份 `~/.dsh/profiles/<profile>/cordis.patch.yml`，并在安装后把自定义条目一并补回原 bundle 行里。
+> **⚠️ Override 语义提示：** DSH 加载器的 patch 规则，`id: llm-pi-ai` + `config:` 会**整段替换**该插件的 `config`，不做深层合并。对于全新默认 profile 这是预期的（不会替换任何东西）。**如果你已经在该 profile 手改过其他 provider**（其他自定义 `providers.xxx`），bundle先会替换整个块。使用下方的 merge 辅助工具来保留它们。
+
+**Merge 辅助工具（保留现有 provider）：**
+
+若该 profile 上已有自定义 provider，生成一个 `--patch` overlay 来保留它们并追加 `numes-free`：
+
+```sh
+node tools/merge-providers.mjs --profile <你的-profile> > numes-merge.yml
+dsh --profile <你的-profile> --patch numes-merge.yml web
+```
+
+该 overlay 落在 user patch layer（位于 bundle 之上），后续 bundle 更新不会覆盖你的自定义 provider。工具通过 `dsh --dump-config` 读取当前组合视图，并重新输出追加 `numes-free` 后的完整 `providers`。
 
 本指南验证过：2026 年 11 月 17 日于 DSH Desktop 0.2.2-rc.3、Windows、Numes 美金密钥。2026 年 11 月 18 日再次复查：DSH rc.4/rc.5 仅调整服务端搜索与错误修复，本文档所述模型配置流程及密钥处理方式未变化。本指南为配置说明，**不是 DSH 插件**，也不会对你的 profile 运行安装器。本项目独立于两项服务。
 

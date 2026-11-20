@@ -6,6 +6,7 @@ All notable changes to this project. Format follows [Keep a Changelog](https://k
 
 ### Added
 
+- **`tools/merge-providers.mjs`** — generates a `--patch` overlay preserving every provider already configured on a profile's `llm-pi-ai` row while adding `numes-free`. For profiles carrying hand-edited providers that the default bundle install would otherwise overwrite. Emit with `node tools/merge-providers.mjs --profile <name> > numes-merge.yml`, apply with `dsh --profile <name> --patch numes-merge.yml`.
 - **Bundle verification recipe** — `dsh --profile <name> --dump-config | grep -A 4 numes-free` — proves the `cordis.patch.yml` row applied to the stock `llm-pi-ai` provider list without manual profile editing. Documented in `docs/SETUP.md`, `docs/SETUP.ru.md`, `docs/SETUP.zh.md` and `README.md`.
 - Verified against DSH 0.2.2-rc.3: clean-profile install of `github:wwewtech/numes-deepseek-harness` followed by `--dump-config` prints the merged Loader view carrying `numes-free`.
 
